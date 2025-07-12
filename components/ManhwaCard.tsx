@@ -53,7 +53,7 @@ const ManhwaCard = ({
     const onPress = () => {
         router.push({
             pathname: '/(pages)/ManhwaPage', 
-            params: {manga_id: manhwa.manhwa_id}
+            params: {manhwa_id: manhwa.manhwa_id}
         })
     }
     

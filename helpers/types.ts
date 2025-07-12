@@ -87,3 +87,12 @@ export type ReadingSummary = {
     status: string
     total: number
 }
+
+
+export type ManhwaCard = {
+    title: string
+    manhwa_id: number
+    image_url: string
+    width: number
+    height: number
+}

@@ -1,7 +1,7 @@
 import AddToLibray from '@/components/AddToLibray';
 import BugReportButton from '@/components/buttons/BugReportButton';
 import HomeButton from '@/components/buttons/HomeButton';
-import RandomManhwaButton from '@/components/buttons/OpenRandomMangaButton';
+import OpenRandomManhwaButton from '@/components/buttons/OpenRandomManhwaButton';
 import ReturnButton from '@/components/buttons/ReturnButton';
 import ManhwaChapterGrid from '@/components/grid/ManhwaChapterGrid';
 import ManhwaAuthorInfo from '@/components/ManhwaAuthorInfo';
@@ -51,30 +51,30 @@ const ManhwaPage = () => {
 
   const db = useSQLiteContext()
   const params = useLocalSearchParams()
-  const manga_id: number = params.manga_id as any
+  const manhwa_id: number = params.manhwa_id as any
   const [manhwa, setManhwa] = useState<Manhwa | null>(null)  
 
   useEffect(
     () => {
       async function init() {
-        if (!manga_id) { 
+        if (!manhwa_id) { 
           Toast.show(ToastMessages.EN.INVALID_MANGA)
           router.replace("/(pages)/HomePage")
           return
         }
-        const m: Manhwa | null = await dbReadManhwaById(db, manga_id).catch(e => null)
+        const m: Manhwa | null = await dbReadManhwaById(db, manhwa_id).catch(e => null)
         if (m === null) {
           Toast.show(ToastMessages.EN.INVALID_MANGA)
           router.replace("/(pages)/HomePage")
           return
         }
         setManhwa(m)
-        spUpdateManhwaViews(manga_id)
-        dbUpdateManhwaViews(db, manga_id)
+        spUpdateManhwaViews(manhwa_id)
+        dbUpdateManhwaViews(db, manhwa_id)
       }
       init()
     },
-    [db, manga_id]
+    [db, manhwa_id]
   )
 
   if (!manhwa) {
@@ -98,7 +98,7 @@ const ManhwaPage = () => {
             <HomeButton color={manhwa.color} />
             <View style={{flexDirection: 'row', alignItems: "center", justifyContent: "center", gap: 16}} >
                 <BugReportButton color={manhwa.color} title={manhwa.title} />                    
-                <RandomManhwaButton color={manhwa.color} />
+                <OpenRandomManhwaButton color={manhwa.color} />
                 <ReturnButton color={manhwa.color} />
             </View>
         </View>

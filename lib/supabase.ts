@@ -1,5 +1,5 @@
 import { AppConstants } from "@/constants/AppConstants";
-import { AppRelease, Chapter, ChapterImage, DonateMethod, Manhwa, OugiUser, ReadingSummary } from "@/helpers/types";
+import { AppRelease, Chapter, ChapterImage, DonateMethod, Manhwa, ManhwaCard, OugiUser, ReadingSummary } from "@/helpers/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthError, createClient, PostgrestError, Session } from '@supabase/supabase-js';
 
@@ -34,8 +34,7 @@ export async function spFetchUser(
         .select("*")
         .eq("user_id", user_id)
         .single()
-
-    console.log(2)
+    
     if (error) {
         console.log("error spFetchUser", error)
         return null
@@ -269,4 +268,16 @@ export async function spFetchUserReadingStatus(user_id: string): Promise<{manhwa
     }
 
     return data
+}
+
+
+export async function spFetchRandomManhwaCards(p_limit: number = 30, p_offset: number = 0): Promise<ManhwaCard[]> {
+    const { data, error } = await supabase
+        .rpc("get_random_cards", {p_offset, p_limit})
+
+    if (error) {
+        console.log("error spFetchRandomManhwaCards", error)
+    }
+
+    return data as ManhwaCard[]
 }

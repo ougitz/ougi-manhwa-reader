@@ -3,7 +3,7 @@ import { Colors } from '@/constants/Colors'
 import { ToastMessages } from '@/constants/Messages'
 import { dbGetRandomManhwaId } from '@/lib/database'
 import Ionicons from '@expo/vector-icons/Ionicons'
-import { useRouter } from 'expo-router'
+import { router } from 'expo-router'
 import { useSQLiteContext } from 'expo-sqlite'
 import React, { useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
@@ -22,20 +22,19 @@ const OpenRandomManhwaButton = ({
     color = Colors.white,
     backgroundColor = Colors.backgroundColor
 }: RandomManhwaButtonProps) => {
-    
-    const router = useRouter()
+        
     const db = useSQLiteContext()    
     const [loading, setLoading] = useState(false)
 
     const openRandomManhwa = async () => {
         setLoading(true)
-        const manga_id: number | null = await dbGetRandomManhwaId(db)
-        if (manga_id === null) {
+        const manhwa_id: number | null = await dbGetRandomManhwaId(db)
+        if (manhwa_id === null) {
             Toast.show(ToastMessages.EN.NO_MANGAS)
             setLoading(false)
             return
         }        
-        router.navigate({pathname: '/(pages)/ManhwaPage', params: {manga_id}})
+        router.navigate({pathname: '/(pages)/ManhwaPage', params: {manhwa_id}})
         setLoading(false)
     }
 

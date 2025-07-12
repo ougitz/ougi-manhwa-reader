@@ -12,10 +12,22 @@ import { Image } from 'expo-image'
 import { useLocalSearchParams } from 'expo-router'
 import { useSQLiteContext } from 'expo-sqlite'
 import React, { useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, PixelRatio, StyleSheet, View } from 'react-native'
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
+} from 'react-native-reanimated'
 
 
 const MAX_WIDTH = wp(100)
+const SCREEN_HEIGHT = hp(100)
+const HEADER_BOX_HEIGHT = 160
+const FOOTER_BOX_HEIGHT = 500
+
+
+const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 
 
 const ChapterPage = () => {
@@ -28,6 +40,9 @@ const ChapterPage = () => {
     const flashListRef = useRef<FlashList<ChapterImage>>(null)
 
     const currentChapter: Chapter = chapters[currentChapterIndex]    
+    const headerVisible = useSharedValue(true)
+    const footerVisible = useSharedValue(false)
+    const flashListTotalHeight = useSharedValue(hp(100))
 
     useEffect(
       () => {
@@ -39,6 +54,14 @@ const ChapterPage = () => {
           await Image.clearMemoryCache()
           const imgs = await spFetchChapterImages(currentChapter.chapter_id)
           Image.prefetch(imgs.slice(0, 3).map((i) => i.image_url))
+          let newHeight = 0
+          imgs.forEach(img => {
+            const w = Math.min(img.width, MAX_WIDTH)
+            const h = (w * img.height) / img.width
+            newHeight += h
+          })
+          flashListTotalHeight.value = newHeight + FOOTER_BOX_HEIGHT
+          footerVisible.value = false
           setImages(imgs)
         setLoading(false)
 
@@ -70,50 +93,104 @@ const ChapterPage = () => {
       }
     }
 
-    const renderItem = ({item}: {item: ChapterImage}) => {
+    const scrollHandler = useAnimatedScrollHandler({
+      onScroll: (event) => {
+        headerVisible.value = event.contentOffset.y <= 50
+        footerVisible.value = event.contentOffset.y + SCREEN_HEIGHT >= flashListTotalHeight.value - 100
+      }
+    })
+
+    const animatedHeaderStyle = useAnimatedStyle(() => {
+      return {        
+        transform: [
+          { translateY: withTiming(headerVisible.value ? 0 : -HEADER_BOX_HEIGHT, { duration: 400 }) }
+        ],
+        zIndex: 10,
+        position: 'absolute',
+        top: 0,
+        left: 0
+      }
+    })
+
+    const animatedFooterStyle = useAnimatedStyle(() => {
+      return {        
+        transform: [
+          { translateY: withTiming(footerVisible.value ? -FOOTER_BOX_HEIGHT * 1.5: FOOTER_BOX_HEIGHT, { duration: 400 }) }
+        ],
+        zIndex: 10,
+        width: '100%',
+        position: 'absolute',
+        bottom: -FOOTER_BOX_HEIGHT,
+        left: 0
+      }
+    })
+
+    const keyExtractor = (item: ChapterImage | 'BoxHeader' | 'BoxFooter'): string => {
+      switch (item) {
+        case "BoxHeader":
+          return 'BoxHeader'
+        case "BoxFooter":
+          return 'BoxFooter'
+        default:
+          return item.image_url
+      }
+    }
+
+    const renderItem = ({item}: {item: ChapterImage | 'BoxHeader' | 'BoxFooter'}) => {
+
+      if (item === 'BoxHeader') {
+        return <View style={{width: '100%', height: 160}} />
+      }
+
+      if (item === 'BoxFooter') {
+        return <View style={{width: '100%', height: FOOTER_BOX_HEIGHT}} />
+      }
+
       const width = Math.min(item.width, MAX_WIDTH)
-      const height = (width * item.height) / item.width
-      return (    
+      const height = PixelRatio.roundToNearestPixel((width * item.height) / item.width)
+
+      return (
         <Image 
           style={{ width, height }} 
-          source={item.image_url} 
+          source={item.image_url}
           contentFit="cover"
-        />      
+        />
       )
     }    
 
     return (
         <View style={styles.container} >          
-            <FlashList
-              data={images}
-              ref={flashListRef}
-              keyExtractor={(item) => item.image_url}
-              renderItem={renderItem}
-              estimatedItemSize={hp(50)}
-              scrollEventThrottle={4}
-              drawDistance={hp(300)}
-              onEndReachedThreshold={3}
-              ListHeaderComponent={
-                <ChapterHeader
-                mangaTitle={mangaTitle}
-                currentChapter={currentChapter}
-                loading={loading}
-                goToNextChapter={goToNextChapter}
-                goToPreviousChapter={goToPreviousChapter}
-              />
-              }
-              ListFooterComponent={
-                <ChapterFooter
-                  mangaTitle={mangaTitle}
-                  currentChapter={currentChapter}
-                  loading={loading}
-                  goToNextChapter={goToNextChapter}
-                  goToPreviousChapter={goToPreviousChapter}
-                />
-              }
-              ListEmptyComponent={<ActivityIndicator size={32} color={Colors.white} />}
-            />                    
-            <ChapterArrowUpButton onPress={scrollToTop} />
+          <Animated.View style={animatedHeaderStyle} > 
+            <ChapterHeader
+              mangaTitle={mangaTitle}
+              currentChapter={currentChapter}
+              loading={loading}
+              goToNextChapter={goToNextChapter}
+              goToPreviousChapter={goToPreviousChapter}
+            />
+          </Animated.View>
+          <AnimatedFlashList
+            data={[...['BoxHeader'], ...images, ...['BoxFooter']] as any}
+            ref={flashListRef as any}
+            keyExtractor={keyExtractor as any}
+            renderItem={renderItem as any}
+            estimatedItemSize={200}
+            scrollEventThrottle={4}
+            drawDistance={hp(300)}
+            onScroll={scrollHandler}
+            onEndReachedThreshold={3}
+            ListEmptyComponent={<ActivityIndicator size={32} color={Colors.orange} />}
+          />
+          <Animated.View style={animatedFooterStyle} >
+            <ChapterFooter
+              mangaTitle={mangaTitle}
+              currentChapter={currentChapter}
+              loading={loading}
+              goToNextChapter={goToNextChapter}
+              goToPreviousChapter={goToPreviousChapter}
+            />
+          </Animated.View>
+          <ChapterArrowUpButton onPress={scrollToTop} />
         </View>
     )
 }

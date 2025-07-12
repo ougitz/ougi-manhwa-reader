@@ -3,6 +3,7 @@ import OpenRandomManhwaButton from '@/components/buttons/OpenRandomManhwaButton'
 import UpdateDatabaseButton from '@/components/buttons/UpdateDatabaseButton'
 import GenreGrid from '@/components/grid/GenreGrid'
 import ManhwaHorizontalGrid from '@/components/grid/ManhwaHorizontalGrid'
+import RandomCardsGrid from '@/components/grid/RandomCardsGrid'
 import LateralMenu from '@/components/LateralMenu'
 import AppLogo from '@/components/util/Logo'
 import Row from '@/components/util/Row'
@@ -96,6 +97,7 @@ const HomePage = () => {
                         onViewAll={() => router.navigate("/(pages)/MostViewPage")}
                         fetchFunction={dbReadManhwasOrderedByViews}
                     />
+                    <RandomCardsGrid/>
                     <View style={{width: '100%', height: 60}} />
                 </View>
             </ScrollView>
